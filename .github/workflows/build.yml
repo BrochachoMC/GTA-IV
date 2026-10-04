@@ -1,0 +1,148 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+      - name: Montar projeto Android
+        run: |
+          set -e
+          command -v ffmpeg >/dev/null || sudo apt-get install -y ffmpeg
+          VIDEO=$(ls *.mp4 | head -1)
+          LOGO=$(ls *.png *.jpg *.jpeg 2>/dev/null | head -1)
+          P=build_gtavi
+          R=$P/app/src/main/res
+          mkdir -p $P/app/src/main/java/com/gtavi/player $R/raw $R/values
+          cp "$VIDEO" $R/raw/gta6.mp4
+          for pair in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            d=${pair%%:*}; s=${pair##*:}; mkdir -p $R/mipmap-$d
+            ffmpeg -v error -y -f lavfi -i color=white:s=${s}x${s} -i "$LOGO" -filter_complex "[1:v]scale=$((s*88/100)):$((s*88/100)):force_original_aspect_ratio=decrease[l];[0:v][l]overlay=(W-w)/2:(H-h)/2,format=rgb24" -frames:v 1 $R/mipmap-$d/ic_launcher.png
+          done
+          cat > $P/settings.gradle <<'E'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositories { google(); mavenCentral() } }
+          rootProject.name = "GrandTheftAutoVI"
+          include ':app'
+          E
+          cat > $P/build.gradle <<'E'
+          plugins { id 'com.android.application' version '8.7.3' apply false }
+          E
+          printf 'org.gradle.jvmargs=-Xmx2g\nandroid.useAndroidX=false\n' > $P/gradle.properties
+          cat > $P/app/build.gradle <<'E'
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.gtavi.player'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'com.gtavi.player'
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName '1.0'
+              }
+              aaptOptions { noCompress 'mp4' }
+          }
+          E
+          cat > $P/app/src/main/AndroidManifest.xml <<'E'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application
+                  android:label="Grand Theft Auto VI"
+                  android:icon="@mipmap/ic_launcher"
+                  android:theme="@style/AppTheme"
+                  android:allowBackup="false">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:screenOrientation="landscape"
+                      android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          E
+          cat > $R/values/styles.xml <<'E'
+          <resources>
+              <style name="AppTheme" parent="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+                  <item name="android:windowBackground">@android:color/black</item>
+                  <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+              </style>
+          </resources>
+          E
+          cat > $P/app/src/main/java/com/gtavi/player/MainActivity.java <<'E'
+          package com.gtavi.player;
+
+          import android.app.Activity;
+          import android.net.Uri;
+          import android.os.Bundle;
+          import android.view.Gravity;
+          import android.view.View;
+          import android.view.WindowManager;
+          import android.widget.FrameLayout;
+          import android.widget.VideoView;
+
+          public class MainActivity extends Activity {
+              private VideoView video;
+
+              @Override
+              protected void onCreate(Bundle b) {
+                  super.onCreate(b);
+                  getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                  FrameLayout root = new FrameLayout(this);
+                  root.setBackgroundColor(0xFF000000);
+                  video = new VideoView(this);
+                  root.addView(video, new FrameLayout.LayoutParams(
+                          FrameLayout.LayoutParams.MATCH_PARENT,
+                          FrameLayout.LayoutParams.MATCH_PARENT, Gravity.CENTER));
+                  setContentView(root);
+                  hideSystemUi();
+                  video.setVideoURI(Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.gta6));
+                  video.setOnPreparedListener(mp -> video.start());
+                  video.setOnCompletionListener(mp -> closeApp());
+                  video.setOnErrorListener((mp, what, extra) -> { closeApp(); return true; });
+              }
+
+              private void hideSystemUi() {
+                  getWindow().getDecorView().setSystemUiVisibility(
+                          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                          | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                          | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                          | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                          | View.SYSTEM_UI_FLAG_FULLSCREEN
+                          | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+              }
+
+              @Override
+              public void onWindowFocusChanged(boolean hasFocus) {
+                  super.onWindowFocusChanged(hasFocus);
+                  if (hasFocus) hideSystemUi();
+              }
+
+              private void closeApp() { finishAndRemoveTask(); }
+
+              @Override
+              protected void onStop() {
+                  super.onStop();
+                  if (video != null) video.stopPlayback();
+                  finishAndRemoveTask();
+              }
+          }
+          E
+          cd $P && gradle assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Grand-Theft-Auto-VI-apk
+          path: build_gtavi/app/build/outputs/apk/debug/app-debug.apk
