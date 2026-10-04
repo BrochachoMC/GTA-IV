@@ -18,8 +18,8 @@ jobs:
         run: |
           set -e
           command -v ffmpeg >/dev/null || sudo apt-get install -y ffmpeg
-          VIDEO=$(ls *.mp4 | head -1)
-          LOGO=$(ls *.png *.jpg *.jpeg 2>/dev/null | head -1)
+          VIDEO=$(find . -name "*.mp4" -not -path "./build_gtavi/*" | head -1)
+          LOGO=$(find . \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) -not -path "./build_gtavi/*" | head -1)
           P=build_gtavi
           R=$P/app/src/main/res
           mkdir -p $P/app/src/main/java/com/gtavi/player $R/raw $R/values
