@@ -7,9 +7,9 @@ A small Android prank project inspired by Grand Theft Auto VI.
 
 ## 📸 Screenshots
 
-![Screenshot 1](screenshots/screenshot1.png)
+![Screenshot 1](rockstar.jpg)
 
-![Screenshot 2](screenshots/screenshot2.png)
+![Screenshot 2](glith.jpg)
 
 ## ℹ️ About the Project
 
