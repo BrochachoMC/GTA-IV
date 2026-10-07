@@ -30,6 +30,14 @@ The APK does not collect data, install additional software, or perform any other
 
 Check the [Releases](../../releases) section to download the latest version.
 
+## 🌐 Web Version
+
+**Don't want to download the APK?** You can play the prank online directly from your browser by clicking the link below:
+
+[👉 Play GTA VI Online](https://brochachomc.github.io/GTA-VI/)
+
+The web version works on any device: Chromebook, phone, tablet, or PC. Just click the link and the prank will start automatically.
+
 ## 👨‍💻 Credits
 
 Created by **BrochachoMC** with assistance from **Claude**.
