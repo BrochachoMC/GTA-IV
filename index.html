@@ -3,36 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GTA VI</title>
+<title>GTA V</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-  video { width: 100%; height: 100%; object-fit: contain; display: none; }
-  #start {
-    position: absolute; inset: 0; margin: auto; width: 220px; height: 60px;
-    font-size: 20px; border: 0; border-radius: 8px;
-    background: #fff; color: #000; cursor: pointer;
-  }
+  video { width: 100%; height: 100%; object-fit: contain; }
 </style>
 </head>
 <body>
-<button id="start">Iniciar GTA VI</button>
-<video id="v" src="video.mp4" playsinline></video>
+<video id="v" src="video.mp4" autoplay playsinline muted></video>
 
 <script>
-  const btn = document.getElementById("start");
   const v = document.getElementById("v");
 
-  btn.onclick = async () => {
-    btn.style.display = "none";
-    v.style.display = "block";
-    try { await document.documentElement.requestFullscreen(); } catch (e) {}
-    v.play();
-  };
+  window.addEventListener('load', async () => {
+    try {
+      await document.documentElement.requestFullscreen();
+    } catch (e) {}
+    
+    try {
+      await v.play();
+    } catch (e) {}
+  });
 
-  v.onended = () => {
-    v.style.display = "none";
-    if (document.fullscreenElement) document.exitFullscreen();
-  };
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+      v.pause();
+    }
+  });
 </script>
 </body>
 </html>
