@@ -31,10 +31,12 @@
   const buttons = document.getElementById("buttons");
   const v = document.getElementById("v");
 
-  btn.onclick = () => {
+  btn.onclick = async () => {
     buttons.style.display = "none";
     v.style.display = "block";
-    v.play();
+    v.volume = 1;
+    try { await document.documentElement.requestFullscreen(); } catch (e) {}
+    try { await v.play(); } catch (e) {}
   };
 
   fsBtn.onclick = async () => {
