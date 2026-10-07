@@ -3,31 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GTA V</title>
+<title>GTA VI</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-  video { width: 100%; height: 100%; object-fit: contain; }
+  video { width: 100%; height: 100%; object-fit: contain; display: none; }
+  #buttons {
+    position: absolute; inset: 0; margin: auto; width: 480px; height: 60px;
+    display: flex; gap: 20px; justify-content: center;
+  }
+  button {
+    width: 220px; height: 60px; font-size: 16px; border: 0; border-radius: 8px;
+    background: #fff; color: #000; cursor: pointer; font-weight: bold;
+  }
+  button:hover { background: #ddd; }
 </style>
 </head>
 <body>
-<video id="v" src="video.mp4" autoplay playsinline muted></video>
+<div id="buttons">
+  <button id="start">Iniciar GTA VI</button>
+  <button id="fullscreen">Full Screen</button>
+</div>
+<video id="v" src="video.mp4" playsinline></video>
 
 <script>
+  const btn = document.getElementById("start");
+  const fsBtn = document.getElementById("fullscreen");
+  const buttons = document.getElementById("buttons");
   const v = document.getElementById("v");
 
-  window.addEventListener('load', async () => {
-    try {
-      await document.documentElement.requestFullscreen();
-    } catch (e) {}
-    
-    try {
-      await v.play();
-    } catch (e) {}
-  });
+  btn.onclick = () => {
+    buttons.style.display = "none";
+    v.style.display = "block";
+    v.play();
+  };
 
-  document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement) {
-      v.pause();
+  fsBtn.onclick = async () => {
+    try { await document.documentElement.requestFullscreen(); } catch (e) {}
+  };
+
+  v.onended = () => {
+    buttons.style.display = "none";
+  };
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.fullscreenElement) {
+      document.exitFullscreen();
+      buttons.style.display = "flex";
+      v.style.display = "none";
+      v.currentTime = 0;
     }
   });
 </script>
